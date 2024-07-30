@@ -2,6 +2,14 @@
 
 An open source repository for all Uniswap front end interfaces maintained by Uniswap Labs. Uniswap is a protocol for decentralized exchange of Ethereum tokens.
 
+## Install
+
+```
+yarn cache clean --all
+yarn install
+```
+angular2html
+
 ## Interfaces
 
 - Web: [app.uniswap.org](https://app.uniswap.org)
