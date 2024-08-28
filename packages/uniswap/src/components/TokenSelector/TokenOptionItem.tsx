@@ -4,7 +4,6 @@ import { iconSizes } from 'ui/src/theme'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
 import { TokenOption } from 'uniswap/src/components/TokenSelector/types'
 import WarningIcon from 'uniswap/src/components/icons/WarningIcon'
-import { InlineNetworkPill } from 'uniswap/src/components/network/NetworkPill'
 import { SafetyLevel } from 'uniswap/src/data/graphql/uniswap-data-api/__generated__/types-and-hooks'
 import TokenWarningModal from 'uniswap/src/features/tokens/TokenWarningModal'
 import { shortenAddress } from 'uniswap/src/utils/addresses'
@@ -12,7 +11,6 @@ import { getSymbolDisplayText } from 'uniswap/src/utils/currency'
 
 interface OptionProps {
   option: TokenOption
-  showNetworkPill: boolean
   showWarnings: boolean
   onDismiss?: () => void
   onPress: () => void
@@ -28,7 +26,6 @@ interface OptionProps {
 
 function _TokenOptionItem({
   option,
-  showNetworkPill,
   showWarnings,
   onDismiss,
   onPress,
@@ -75,7 +72,14 @@ function _TokenOptionItem({
         width="100%"
         onPress={onPressTokenOption}
       >
-        <Flex row alignItems="center" gap="$spacing8" justifyContent="space-between" py="$spacing12">
+        <Flex
+          row
+          alignItems="center"
+          data-testid={`token-option-${currency.chainId}-${currency.symbol}`}
+          gap="$spacing8"
+          justifyContent="space-between"
+          py="$spacing12"
+        >
           <Flex row shrink alignItems="center" gap={isWeb ? '$spacing8' : '$spacing12'}>
             <TokenLogo
               chainId={currency.chainId}
@@ -84,18 +88,18 @@ function _TokenOptionItem({
               symbol={currency.symbol}
               url={currencyInfo.logoUrl ?? undefined}
             />
-            <Flex shrink alignItems="flex-start">
-              <Flex centered row gap="$spacing8">
-                <Flex shrink>
-                  <Text color="$neutral1" numberOfLines={1} variant={isWeb ? 'body2' : 'body1'}>
-                    {currency.name}
-                  </Text>
-                </Flex>
+            <Flex shrink>
+              <Flex row alignItems="center" gap="$spacing8">
+                <Text color="$neutral1" numberOfLines={1} variant={isWeb ? 'body2' : 'body1'}>
+                  {currency.name}
+                </Text>
                 {(safetyLevel === SafetyLevel.Blocked || safetyLevel === SafetyLevel.StrongWarning) && (
-                  <WarningIcon safetyLevel={safetyLevel} size="$icon.16" strokeColorOverride="neutral3" />
+                  <Flex>
+                    <WarningIcon safetyLevel={safetyLevel} size="$icon.16" strokeColorOverride="neutral3" />
+                  </Flex>
                 )}
               </Flex>
-              <Flex centered row gap="$spacing8">
+              <Flex row alignItems="center" gap="$spacing8">
                 <Text color="$neutral2" numberOfLines={1} variant="body3">
                   {getSymbolDisplayText(currency.symbol)}
                 </Text>
@@ -106,32 +110,29 @@ function _TokenOptionItem({
                     </Text>
                   </Flex>
                 )}
-                {showNetworkPill && <InlineNetworkPill chainId={currency.chainId} />}
               </Flex>
             </Flex>
           </Flex>
 
           {quantity && quantity !== 0 ? (
             <Flex alignItems="flex-end">
-              <Text variant={isWeb ? 'body2' : 'body1'}>{quantityFormatted}</Text>
+              <Text variant={isWeb ? 'body2' : 'body1'}>{balance}</Text>
               <Text color="$neutral2" variant={isWeb ? 'body3' : 'subheading2'}>
-                {balance}
+                {quantityFormatted}
               </Text>
             </Flex>
           ) : null}
         </Flex>
       </TouchableArea>
 
-      {showWarningModal ? (
-        <TokenWarningModal
-          isVisible
-          currencyId={currencyId}
-          safetyLevel={safetyLevel}
-          tokenLogoUrl={logoUrl}
-          onAccept={onAcceptTokenWarning}
-          onClose={(): void => setShowWarningModal(false)}
-        />
-      ) : null}
+      <TokenWarningModal
+        currencyId={currencyId}
+        isVisible={showWarningModal}
+        safetyLevel={safetyLevel}
+        tokenLogoUrl={logoUrl}
+        onAccept={onAcceptTokenWarning}
+        onClose={(): void => setShowWarningModal(false)}
+      />
     </>
   )
 }

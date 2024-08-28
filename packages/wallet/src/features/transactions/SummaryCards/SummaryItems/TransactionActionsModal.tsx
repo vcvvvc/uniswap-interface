@@ -8,15 +8,13 @@ import { BottomSheetModal } from 'uniswap/src/components/modals/BottomSheetModal
 import { UNIVERSE_CHAIN_INFO } from 'uniswap/src/constants/chains'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { ElementName, ModalName } from 'uniswap/src/features/telemetry/constants'
-import { CurrencyId } from 'uniswap/src/types/currency'
 import { setClipboard } from 'uniswap/src/utils/clipboard'
 import { openUri } from 'uniswap/src/utils/linking'
 import { logger } from 'utilities/src/logger/logger'
 import { FORMAT_DATE_LONG, useFormattedDate } from 'wallet/src/features/language/localizedDayjs'
 import { pushNotification } from 'wallet/src/features/notifications/slice'
 import { AppNotificationType, CopyNotificationType } from 'wallet/src/features/notifications/types'
-import { useCurrencyInfo } from 'wallet/src/features/tokens/useCurrencyInfo'
-import { BaseSwapTransactionInfo, TransactionDetails, TransactionType } from 'wallet/src/features/transactions/types'
+import { TransactionDetails, TransactionType } from 'wallet/src/features/transactions/types'
 import { openLegacyFiatOnRampServiceProviderLink, openOnRampSupportLink } from 'wallet/src/utils/linking'
 
 function renderOptionItem(label: string, textColorOverride?: ColorTokens): () => JSX.Element {
@@ -34,8 +32,6 @@ function renderOptionItem(label: string, textColorOverride?: ColorTokens): () =>
 
 interface TransactionActionModalProps {
   onExplore: () => void
-  onViewTokenDetails?: (currencyId: CurrencyId) => void
-  onViewMoonpay?: () => void
   onClose: () => void
   onCancel: () => void
   msTimestampAdded: number
@@ -48,9 +44,7 @@ export default function TransactionActionsModal({
   msTimestampAdded,
   onCancel,
   onClose,
-  onViewTokenDetails,
   onExplore,
-  onViewMoonpay,
   showCancelButton,
   transactionDetails,
 }: TransactionActionModalProps): JSX.Element {
@@ -63,47 +57,7 @@ export default function TransactionActionsModal({
     onClose()
   }, [onClose])
 
-  const inputCurrencyInfo = useCurrencyInfo((transactionDetails.typeInfo as BaseSwapTransactionInfo).inputCurrencyId)
-
-  const outputCurrencyInfo = useCurrencyInfo((transactionDetails.typeInfo as BaseSwapTransactionInfo).outputCurrencyId)
-
   const options = useMemo(() => {
-    const isSwapTransaction = transactionDetails.typeInfo.type === TransactionType.Swap
-
-    const maybeViewSwapToken =
-      onViewTokenDetails && isSwapTransaction && inputCurrencyInfo && outputCurrencyInfo
-        ? [
-            {
-              key: inputCurrencyInfo.currencyId,
-              onPress: () => onViewTokenDetails(inputCurrencyInfo.currencyId),
-              render: renderOptionItem(
-                t('transaction.action.view', {
-                  tokenSymbol: inputCurrencyInfo?.currency.symbol,
-                }),
-              ),
-            },
-            {
-              key: outputCurrencyInfo.currencyId,
-              onPress: () => onViewTokenDetails(outputCurrencyInfo.currencyId),
-              render: renderOptionItem(
-                t('transaction.action.view', {
-                  tokenSymbol: outputCurrencyInfo?.currency.symbol,
-                }),
-              ),
-            },
-          ]
-        : []
-
-    const maybeViewOnMoonpayOption = onViewMoonpay
-      ? [
-          {
-            key: ElementName.MoonpayExplorerView,
-            onPress: onViewMoonpay,
-            render: renderOptionItem(t('transaction.action.viewMoonPay')),
-          },
-        ]
-      : []
-
     const chainInfo = UNIVERSE_CHAIN_INFO[transactionDetails.chainId]
 
     const maybeViewOnEtherscanOption = transactionDetails.hash
@@ -122,6 +76,12 @@ export default function TransactionActionsModal({
 
     const transactionId = getTransactionId(transactionDetails)
 
+    const onRampProviderName =
+      transactionDetails.typeInfo.type === TransactionType.OnRampPurchase ||
+      transactionDetails.typeInfo.type === TransactionType.OnRampTransfer
+        ? transactionDetails.typeInfo.serviceProvider?.name
+        : undefined
+
     const maybeCopyTransactionIdOption = transactionId
       ? [
           {
@@ -136,16 +96,18 @@ export default function TransactionActionsModal({
               )
               handleClose()
             },
-            render: onViewMoonpay
-              ? renderOptionItem(t('transaction.action.copyMoonPay'))
+            render: onRampProviderName
+              ? renderOptionItem(
+                  t('transaction.action.copyProvider', {
+                    providerName: onRampProviderName,
+                  }),
+                )
               : renderOptionItem(t('transaction.action.copy')),
           },
         ]
       : []
 
     const transactionActionOptions: MenuItemProp[] = [
-      ...maybeViewSwapToken,
-      ...maybeViewOnMoonpayOption,
       ...maybeViewOnEtherscanOption,
       ...maybeCopyTransactionIdOption,
       {
@@ -165,19 +127,7 @@ export default function TransactionActionsModal({
       })
     }
     return transactionActionOptions
-  }, [
-    transactionDetails,
-    inputCurrencyInfo,
-    outputCurrencyInfo,
-    onViewMoonpay,
-    onViewTokenDetails,
-    t,
-    onExplore,
-    showCancelButton,
-    dispatch,
-    handleClose,
-    onCancel,
-  ])
+  }, [transactionDetails, t, onExplore, showCancelButton, dispatch, handleClose, onCancel])
 
   return (
     <BottomSheetModal

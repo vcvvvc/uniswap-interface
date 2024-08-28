@@ -2,14 +2,16 @@ import { memo, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex } from 'ui/src'
 import { BaseCard } from 'uniswap/src/components/BaseCard/BaseCard'
-import { SectionHeader, TokenSelectorList } from 'uniswap/src/components/TokenSelector/TokenSelectorList'
+import { SectionHeader } from 'uniswap/src/components/TokenSelector/TokenSectionHeader'
+import { TokenSelectorList } from 'uniswap/src/components/TokenSelector/TokenSelectorList'
 import {
   ConvertFiatAmountFormattedCallback,
   OnSelectCurrency,
+  TokenOptionSection,
   TokenSection,
   TokenSectionsForSend,
 } from 'uniswap/src/components/TokenSelector/types'
-import { getTokenOptionsSection } from 'uniswap/src/components/TokenSelector/utils'
+import { useTokenOptionsSection } from 'uniswap/src/components/TokenSelector/utils'
 import { GqlResult } from 'uniswap/src/data/types'
 import { FeatureFlags } from 'uniswap/src/features/gating/flags'
 import { useFeatureFlag } from 'uniswap/src/features/gating/hooks'
@@ -18,24 +20,20 @@ import { FormatNumberOrStringInput } from 'uniswap/src/features/language/formatt
 function useTokenSectionsForSend({
   activeAccountAddress,
   chainFilter,
+  valueModifiers,
   usePortfolioTokenOptionsHook,
 }: TokenSectionsForSend): GqlResult<TokenSection[]> {
-  const { t } = useTranslation()
-
   const {
     data: portfolioTokenOptions,
     error: portfolioTokenOptionsError,
     refetch: refetchPortfolioTokenOptions,
     loading: portfolioTokenOptionsLoading,
-  } = usePortfolioTokenOptionsHook(activeAccountAddress, chainFilter)
+  } = usePortfolioTokenOptionsHook(activeAccountAddress, chainFilter, valueModifiers)
 
   const loading = portfolioTokenOptionsLoading
   const error = !portfolioTokenOptions && portfolioTokenOptionsError
 
-  const sections = useMemo(
-    () => getTokenOptionsSection(t('tokens.selector.section.yours'), portfolioTokenOptions),
-    [portfolioTokenOptions, t],
-  )
+  const sections = useTokenOptionsSection(TokenOptionSection.YourTokens, portfolioTokenOptions)
 
   return useMemo(
     () => ({
@@ -55,7 +53,7 @@ function EmptyList({ onEmptyActionPress }: { onEmptyActionPress?: () => void }):
 
   return (
     <Flex>
-      <SectionHeader title={t('tokens.selector.section.yours')} />
+      <SectionHeader sectionKey={TokenOptionSection.YourTokens} />
       <Flex pt="$spacing16" px="$spacing16">
         <BaseCard.EmptyState
           buttonLabel={
@@ -75,10 +73,12 @@ function EmptyList({ onEmptyActionPress }: { onEmptyActionPress?: () => void }):
 }
 
 function _TokenSelectorSendList({
-  onDismiss,
-  onSelectCurrency,
   activeAccountAddress,
   chainFilter,
+  searchHistory,
+  valueModifiers,
+  onDismiss,
+  onSelectCurrency,
   onEmptyActionPress,
   formatNumberOrStringCallback,
   convertFiatAmountFormattedCallback,
@@ -103,6 +103,8 @@ function _TokenSelectorSendList({
   } = useTokenSectionsForSend({
     activeAccountAddress,
     chainFilter,
+    searchHistory,
+    valueModifiers,
     usePortfolioTokenOptionsHook,
   })
   const emptyElement = useMemo(() => <EmptyList onEmptyActionPress={onEmptyActionPress} />, [onEmptyActionPress])

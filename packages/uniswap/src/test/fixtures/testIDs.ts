@@ -4,6 +4,7 @@
 export const TestID = {
   AccountCard: 'account-card',
   AccountHeaderAvatar: 'account-header-avatar',
+  AccountHeaderSettings: 'account-header-settings-icon',
   AccountHeaderCopyAddress: 'account-header-copy-address',
   ActivityTab: 'activity-tab',
   AddCloudBackup: 'add-cloud-backup',
@@ -20,6 +21,7 @@ export const TestID = {
   CreateAccount: 'create-account',
   Done: 'done',
   Edit: 'edit',
+  ExploreSearchInput: 'explore-search-input',
   Favorite: 'favorite',
   ImportAccount: 'import-account',
   ImportAccountInput: 'import-account-input',
@@ -32,7 +34,12 @@ export const TestID = {
   QRCodeModalToggle: 'qr-code-modal-toggle',
   PortfolioBalance: 'portfolio-balance',
   PortfolioRelativeChange: 'portfolio-relative-change',
+  PriceExplorerAnimatedNumber: 'price-explorer-animated-number',
+  PriceExplorerChart: 'price-explorer-chart',
+  PriceText: 'price-text',
+  ReadMoreButton: 'read-more-button',
   Remove: 'remove',
+  RelativePriceChange: 'relative-price-change',
   ReviewSwap: 'review-swap',
   RestoreFromCloud: 'restore-from-cloud',
   RestoreWallet: 'restore-wallet',
@@ -43,6 +50,7 @@ export const TestID = {
   SearchTokensAndWallets: 'search-tokens-and-wallets',
   SelectRecipient: 'select-recipient',
   Send: 'send',
+  SendModalHeaderLabel: 'send-modal-header-label',
   SendReview: 'send-review',
   SetMaxInput: 'set-max-input',
   SetMaxOutput: 'set-max-output',
@@ -53,7 +61,16 @@ export const TestID = {
   SwapFormHeader: 'swap-form-header',
   SwapSettings: 'swap-settings',
   SwitchCurrenciesButton: 'switch-currencies-button',
+  TokenDetailsAboutHeader: 'token-details-about-header',
+  TokenDetailsBuyButton: 'token-details-buy-button',
+  TokenDetailsMoreButton: 'token-details-more-button',
+  TokenDetailsSellButton: 'token-details-sell-button',
+  TokenDetailsHeaderText: 'token-details-header-text',
   TokenSelectorToggle: 'token-selector-toggle',
+  TokenLinkCopy: 'token-link-copy',
+  TokenLinkEtherscan: 'token-link-etherscan',
+  TokenLinkTwitter: 'token-link-twitter',
+  TokenLinkWebsite: 'token-link-website',
   TokensTab: 'tokens-tab',
   TokenWarningAccept: 'token-warning-accept',
   WalletCard: 'wallet-card',
@@ -66,3 +83,7 @@ export const TestID = {
 } as const
 
 export type TestIDType = (typeof TestID)[keyof typeof TestID]
+
+export type TestIDIterableType = `${(typeof TestID)[keyof typeof TestID]}-${number}`
+
+export type TestIDwithSufixType = `${(typeof TestID)[keyof typeof TestID]}-${string}`

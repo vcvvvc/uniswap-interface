@@ -1,5 +1,3 @@
-import { AnimatedSlider } from 'components/AnimatedSlider'
-import Column from 'components/Column'
 import { useMenuContent } from 'components/NavBar/CompanyMenu/Content'
 import { DownloadApp } from 'components/NavBar/CompanyMenu/DownloadAppCTA'
 import { MenuLink } from 'components/NavBar/CompanyMenu/MenuDropdown'
@@ -14,17 +12,14 @@ import styled, { useTheme } from 'lib/styled-components'
 import { Socials } from 'pages/Landing/sections/Footer'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronDown } from 'react-feather'
-import { useTranslation } from 'react-i18next'
-import { Accordion, Square, Text } from 'ui/src'
+import { Accordion, AnimateTransition, Flex, Square, Text } from 'ui/src'
+import { useTranslation } from 'uniswap/src/i18n'
 
 const StyledMenuLink = styled(MenuLink)`
   color: ${({ theme }) => theme.neutral2} !important;
   &:hover {
     color: ${({ theme }) => theme.neutral2} !important;
   }
-`
-const MobileDrawer = styled(Column)`
-  padding: 12px 24px 32px 24px;
 `
 
 function MenuSection({
@@ -40,7 +35,7 @@ function MenuSection({
 
   return (
     <Accordion.Item value={title} disabled={!collapsible}>
-      <Column gap="10px">
+      <Flex gap="10px">
         <Accordion.Trigger flexDirection="row" p="0" gap="4px">
           {({ open }: { open: boolean }) => (
             <>
@@ -56,9 +51,9 @@ function MenuSection({
           )}
         </Accordion.Trigger>
         <Accordion.Content p="0" forceMount={!collapsible || undefined}>
-          <Column gap="10px">{children}</Column>
+          <Flex gap="10px">{children}</Flex>
         </Accordion.Content>
-      </Column>
+      </Flex>
     </Accordion.Item>
   )
 }
@@ -80,7 +75,7 @@ export function MobileMenuDrawer({ isOpen, closeMenu }: { isOpen: boolean; close
   )
   const onExitPreferencesMenu = useCallback(() => changeView(PreferencesView.SETTINGS), [changeView])
   const { t } = useTranslation()
-  const tabsContent = useTabsContent()
+  const tabsContent = useTabsContent({ includeNftsLink: true })
   const menuContent = useMenuContent()
 
   // Collapse sections on close
@@ -91,11 +86,11 @@ export function MobileMenuDrawer({ isOpen, closeMenu }: { isOpen: boolean; close
   }, [isOpen])
 
   return (
-    <NavDropdown dropdownRef={dropdownRef} isOpen={isOpen}>
-      <MobileDrawer>
-        <AnimatedSlider
+    <NavDropdown dropdownRef={dropdownRef} isOpen={isOpen} dataTestId="company-menu-mobile-drawer">
+      <Flex pt="$spacing12" pb="$spacing32" px="$spacing24">
+        <AnimateTransition
           currentIndex={getSettingsViewIndex(settingsView)}
-          slideDirection={settingsView === PreferencesView.SETTINGS ? 'forward' : 'backward'}
+          animationType={settingsView === PreferencesView.SETTINGS ? 'forward' : 'backward'}
         >
           <Accordion
             overflow="hidden"
@@ -104,7 +99,7 @@ export function MobileMenuDrawer({ isOpen, closeMenu }: { isOpen: boolean; close
             value={openSections}
             onValueChange={setOpenSections}
           >
-            <Column gap="24px">
+            <Flex gap="$spacing24">
               <MenuSection title={t('common.app')} collapsible={false}>
                 {tabsContent.map((tab, index) => (
                   <StyledMenuLink
@@ -131,19 +126,19 @@ export function MobileMenuDrawer({ isOpen, closeMenu }: { isOpen: boolean; close
                 </MenuSection>
               ))}
 
-              <MenuSection title="Display Settings">
+              <MenuSection title={t('common.displaySettings')}>
                 <PreferenceSettings showHeader={false} setSettingsView={changeView} />
               </MenuSection>
 
               <DownloadApp onClick={closeMenu} />
               <Socials iconSize="25px" />
-            </Column>
+            </Flex>
           </Accordion>
 
           <LanguageSettings onExitMenu={onExitPreferencesMenu} />
           <CurrencySettings onExitMenu={onExitPreferencesMenu} />
-        </AnimatedSlider>
-      </MobileDrawer>
+        </AnimateTransition>
+      </Flex>
     </NavDropdown>
   )
 }

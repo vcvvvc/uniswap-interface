@@ -1,3 +1,4 @@
+import { InterfaceElementName } from '@uniswap/analytics-events'
 import { PortfolioLogo } from 'components/AccountDrawer/MiniPortfolio/PortfolioLogo'
 import { ButtonPrimary } from 'components/Button'
 import Column, { ColumnCenter } from 'components/Column'
@@ -7,13 +8,15 @@ import Modal from 'components/Modal'
 import { GetHelpHeader } from 'components/Modal/GetHelpHeader'
 import Row from 'components/Row'
 import { useStablecoinValue } from 'hooks/useStablecoinPrice'
-import { Trans } from 'i18n'
 import styled from 'lib/styled-components'
 import { ReactNode } from 'react'
 import { useSendContext } from 'state/send/SendContext'
-import { useSwapAndLimitContext } from 'state/swap/hooks'
+import { useSwapAndLimitContext } from 'state/swap/useSwapContext'
 import { Separator, ThemedText } from 'theme/components'
+import { capitalize } from 'tsafe'
 import { Unitag } from 'ui/src/components/icons'
+import Trace from 'uniswap/src/features/telemetry/Trace'
+import { Trans, useTranslation } from 'uniswap/src/i18n'
 import { UniverseChainId } from 'uniswap/src/types/chains'
 import { shortenAddress } from 'utilities/src/addresses'
 import { NumberType, useFormatter } from 'utils/formatNumbers'
@@ -64,6 +67,7 @@ const SendModalHeader = ({
 }
 
 export function SendReviewModal({ onConfirm, onDismiss }: { onConfirm: () => void; onDismiss: () => void }) {
+  const { t } = useTranslation()
   const { chainId } = useSwapAndLimitContext()
   const {
     sendState: { inputCurrency, inputInFiat, exactAmountFiat },
@@ -107,7 +111,7 @@ export function SendReviewModal({ onConfirm, onDismiss }: { onConfirm: () => voi
               }
             />
             <SendModalHeader
-              label={<Trans i18nKey="common.to.caps" />}
+              label={capitalize(t('common.to'))}
               header={
                 recipientData?.unitag || recipientData?.ensName ? (
                   <Row gap="xs">
@@ -133,9 +137,11 @@ export function SendReviewModal({ onConfirm, onDismiss }: { onConfirm: () => voi
             </Row>
           </Row>
         </ReviewContentContainer>
-        <ButtonPrimary onClick={onConfirm}>
-          <Trans i18nKey="common.confirmSend.button" />
-        </ButtonPrimary>
+        <Trace logPress element={InterfaceElementName.SEND_REVIEW_BUTTON}>
+          <ButtonPrimary onClick={onConfirm}>
+            <Trans i18nKey="common.confirmSend.button" />
+          </ButtonPrimary>
+        </Trace>
       </ModalWrapper>
     </Modal>
   )

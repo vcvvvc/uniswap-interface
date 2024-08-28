@@ -1,10 +1,9 @@
-import React, { memo, useCallback, useMemo } from 'react'
+import React, { memo, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StatusBar, StyleSheet } from 'react-native'
 import { FadeIn } from 'react-native-reanimated'
 import Svg, { ClipPath, Defs, RadialGradient, Rect, Stop } from 'react-native-svg'
-import { useDispatch } from 'react-redux'
-import { useAppSelector } from 'src/app/hooks'
+import { useDispatch, useSelector } from 'react-redux'
 import { BackButton } from 'src/components/buttons/BackButton'
 import { Favorite } from 'src/components/icons/Favorite'
 import { LongText } from 'src/components/text/LongText'
@@ -26,11 +25,12 @@ import {
 import { ENS_LOGO } from 'ui/src/assets'
 import { SendAction, XTwitter } from 'ui/src/components/icons'
 import { AnimatedFlex } from 'ui/src/components/layout/AnimatedFlex'
-import { iconSizes, imageSizes } from 'ui/src/theme'
+import { DEP_accentColors, iconSizes, imageSizes, validColor } from 'ui/src/theme'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { CurrencyField } from 'uniswap/src/features/transactions/transactionState/types'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { openUri } from 'uniswap/src/utils/linking'
+import { RecipientSelectSpeedBumps } from 'wallet/src/components/RecipientSearch/RecipientSelectSpeedBumps'
 import { AddressDisplay } from 'wallet/src/components/accounts/AddressDisplay'
 import { useENSDescription, useENSName, useENSTwitterUsername } from 'wallet/src/features/ens/api'
 import { selectWatchedAddressSet } from 'wallet/src/features/favorites/selectors'
@@ -55,7 +55,8 @@ export const ProfileHeader = memo(function ProfileHeader({ address }: ProfileHea
   const colors = useSporeColors()
   const dispatch = useDispatch()
   const isDarkMode = useIsDarkMode()
-  const isFavorited = useAppSelector(selectWatchedAddressSet).has(address)
+  const isFavorited = useSelector(selectWatchedAddressSet).has(address)
+  const [checkSpeedBumps, setCheckSpeedBumps] = useState(false)
 
   const displayName = useDisplayName(address, { includeUnitagSuffix: true })
 
@@ -103,7 +104,7 @@ export const ProfileHeader = memo(function ProfileHeader({ address }: ProfileHea
     }
   }, [address])
 
-  const onPressSend = useCallback(() => {
+  const openSendModal = useCallback(() => {
     dispatch(
       openModal({
         name: ModalName.Send,
@@ -111,6 +112,10 @@ export const ProfileHeader = memo(function ProfileHeader({ address }: ProfileHea
       }),
     )
   }, [dispatch, initialSendState])
+
+  const onPressSend = useCallback(async () => {
+    setCheckSpeedBumps(true)
+  }, [])
 
   const onPressTwitter = useCallback(async () => {
     if (twitter) {
@@ -152,7 +157,7 @@ export const ProfileHeader = memo(function ProfileHeader({ address }: ProfileHea
       {/* header row */}
       <Flex row alignItems="center" justifyContent="space-between" mx="$spacing4" px="$spacing24">
         <Flex centered backgroundColor="$surface3" borderRadius="$roundedFull" p="$spacing4">
-          <BackButton color="$sporeWhite" size={iconSizes.icon24} />
+          <BackButton color="$white" size={iconSizes.icon24} />
         </Flex>
         <ProfileContextMenu address={address} />
       </Flex>
@@ -197,7 +202,7 @@ export const ProfileHeader = memo(function ProfileHeader({ address }: ProfileHea
                       source={ENS_LOGO}
                       width={imageSizes.image16}
                     />
-                    <Text color="$blue400" variant="buttonLabel3">
+                    <Text color={validColor(DEP_accentColors.blue400)} variant="buttonLabel3">
                       {primaryENSName}
                     </Text>
                   </Flex>
@@ -249,6 +254,12 @@ export const ProfileHeader = memo(function ProfileHeader({ address }: ProfileHea
           </Flex>
         </Flex>
       </Flex>
+      <RecipientSelectSpeedBumps
+        checkSpeedBumps={checkSpeedBumps}
+        recipientAddress={address}
+        setCheckSpeedBumps={setCheckSpeedBumps}
+        onConfirm={openSendModal}
+      />
     </Flex>
   )
 })

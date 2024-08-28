@@ -66,7 +66,13 @@ import {
   v63Schema,
   v64Schema,
   v65Schema,
+  v66Schema,
+  v67Schema,
+  v68Schema,
+  v69Schema,
   v6Schema,
+  v70Schema,
+  v71Schema,
   v7Schema,
   v8Schema,
   v9Schema,
@@ -78,10 +84,13 @@ import { initialPasswordLockoutState } from 'src/features/CloudBackup/passwordLo
 import { initialModalsState } from 'src/features/modals/modalSlice'
 import { initialTweaksState } from 'src/features/tweaks/slice'
 import { initialWalletConnectState } from 'src/features/walletConnect/walletConnectSlice'
+import { AccountType } from 'uniswap/src/features/accounts/types'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { UniverseChainId, WalletChainId } from 'uniswap/src/types/chains'
+import { getAllKeysOfNestedObject } from 'utilities/src/primitives/objects'
 import { ScannerModalState } from 'wallet/src/components/QRCodeScanner/constants'
-import { ExtensionOnboardingState, initialBehaviorHistoryState } from 'wallet/src/features/behaviorHistory/slice'
+import { initialAppearanceSettingsState } from 'wallet/src/features/appearance/slice'
+import { initialBehaviorHistoryState } from 'wallet/src/features/behaviorHistory/slice'
 import { initialFavoritesState } from 'wallet/src/features/favorites/slice'
 import { initialFiatCurrencyState } from 'wallet/src/features/fiatCurrency/slice'
 import { initialLanguageState } from 'wallet/src/features/language/slice'
@@ -91,11 +100,11 @@ import { initialTelemetryState } from 'wallet/src/features/telemetry/slice'
 import { initialTokensState } from 'wallet/src/features/tokens/tokensSlice'
 import { initialTransactionsState } from 'wallet/src/features/transactions/slice'
 import { TransactionStatus, TransactionType } from 'wallet/src/features/transactions/types'
-import { Account, AccountType, SignerMnemonicAccount } from 'wallet/src/features/wallet/accounts/types'
+import { Account, SignerMnemonicAccount } from 'wallet/src/features/wallet/accounts/types'
 import { initialWalletState, SwapProtectionSetting } from 'wallet/src/features/wallet/slice'
 import { createMigrate } from 'wallet/src/state/createMigrate'
-import { testActivatePendingAccounts } from 'wallet/src/state/sharedMigrationsTests'
-import { getAllKeysOfNestedObject } from 'wallet/src/state/testUtils'
+import { HAYDEN_ETH_ADDRESS } from 'wallet/src/state/walletMigrations'
+import { testActivatePendingAccounts, testAddedHapticSetting } from 'wallet/src/state/walletMigrationsTests'
 import { fiatPurchaseTransactionInfo, signerMnemonicAccount, transactionDetails } from 'wallet/src/test/fixtures'
 
 expect.extend({ toIncludeSameMembers })
@@ -138,7 +147,7 @@ describe('Redux state migrations', () => {
 
     // Add new slices here!
     const initialState = {
-      appearanceSettings: { selectedAppearanceSettings: 'system' },
+      appearanceSettings: initialAppearanceSettingsState,
       biometricSettings: initialBiometricsSettingsState,
       blocks: { byChainId: {} },
       chains: {
@@ -1336,7 +1345,8 @@ describe('Redux state migrations', () => {
     const v61Stub = { ...v61Schema }
     const v62 = migrations[62](v61Stub)
 
-    expect(v62.behaviorHistory.extensionOnboardingState).toBe(ExtensionOnboardingState.Undefined)
+    // Removed in schema 69
+    expect(v62.behaviorHistory.extensionOnboardingState).toBe('Undefined')
   })
 
   it('migrates from v62 to 63', () => {
@@ -1406,5 +1416,45 @@ describe('Redux state migrations', () => {
   it('migrates from v65 to v66', () => {
     const v66 = migrations[66]
     testActivatePendingAccounts(v66, v65Schema)
+  })
+
+  it('migrates from v66 to v67', () => {
+    const v66Stub = { ...v66Schema }
+    const v67 = migrations[67](v66Stub)
+
+    // Removed in migration 69
+    expect(v67.behaviorHistory.extensionOnboardingState).toBe('Undefined')
+  })
+
+  it('migrates from v67 to v68', () => {
+    const v67Stub = { ...v67Schema }
+    const v68 = migrations[68](v67Stub)
+
+    expect(v68.behaviorHistory.extensionBetaFeedbackState).toBe(undefined)
+  })
+
+  it('migrates from v68 to v69', async () => {
+    const v68Stub = { ...v68Schema }
+    const v69 = await migrations[69](v68Stub)
+    expect(v69.behaviorHistory.extensionBetaFeedbackState).toBe(undefined)
+  })
+
+  it('migrates from v69 to v70', async () => {
+    const v69Stub = { ...v69Schema }
+    v69Stub.favorites.watchedAddresses = [HAYDEN_ETH_ADDRESS] as never
+    const v70 = await migrations[70](v69Stub)
+    expect(v70.favorites.watchedAddresses).toEqual([])
+  })
+
+  it('migrates from v70 to v71', async () => {
+    testAddedHapticSetting(migrations[71], v70Schema)
+  })
+
+  it('migrates from v71 to v72', () => {
+    const v71Stub = { ...v71Schema }
+    const v72 = migrations[72](v71Stub)
+
+    expect(v72.behaviorHistory.hasViewedWelcomeWalletCard).toBe(false)
+    expect(v72.behaviorHistory.hasUsedExplore).toBe(false)
   })
 })

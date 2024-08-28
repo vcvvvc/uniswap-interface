@@ -1,7 +1,8 @@
 import { providers } from 'ethers'
 import { useMemo } from 'react'
+import { OrderRequest, Routing } from 'uniswap/src/data/tradingApi/__generated__/index'
+import { AccountMeta } from 'uniswap/src/features/accounts/types'
 import { CurrencyField } from 'uniswap/src/features/transactions/transactionState/types'
-import { OrderRequest, Routing } from 'wallet/src/data/tradingApi/__generated__/index'
 import { GasFeeResult } from 'wallet/src/features/gas/types'
 import { useTokenApprovalInfo } from 'wallet/src/features/transactions/swap/trade/api/hooks/useTokenApprovalInfo'
 import { useTransactionRequestInfo } from 'wallet/src/features/transactions/swap/trade/api/hooks/useTransactionRequestInfo'
@@ -11,6 +12,13 @@ import { DerivedSwapInfo } from 'wallet/src/features/transactions/swap/types'
 import { sumGasFees } from 'wallet/src/features/transactions/swap/utils'
 
 export type SwapTxAndGasInfo = ClassicSwapTxAndGasInfo | UniswapXSwapTxAndGasInfo
+
+export type UniswapXGasBreakdown = {
+  classicGasUseEstimateUSD?: string
+  approvalCost?: string
+  wrapCost?: string
+  inputTokenSymbol?: string
+}
 
 export type ClassicSwapTxAndGasInfo = {
   routing: Routing.CLASSIC
@@ -28,10 +36,11 @@ export type UniswapXSwapTxAndGasInfo = {
   approveTxRequest: ValidatedTransactionRequest | undefined
   orderParams?: OrderRequest
   gasFee: GasFeeResult
+  gasFeeBreakdown: UniswapXGasBreakdown
   approvalError: boolean
 }
 
-type ValidatedTransactionRequest = providers.TransactionRequest & { to: string; chainId: number }
+export type ValidatedTransactionRequest = providers.TransactionRequest & { to: string; chainId: number }
 function validateTransactionRequest(
   request?: providers.TransactionRequest | null,
 ): ValidatedTransactionRequest | undefined {
@@ -41,7 +50,13 @@ function validateTransactionRequest(
   return undefined
 }
 
-export function useSwapTxAndGasInfo({ derivedSwapInfo }: { derivedSwapInfo: DerivedSwapInfo }): SwapTxAndGasInfo {
+export function useSwapTxAndGasInfo({
+  derivedSwapInfo,
+  account,
+}: {
+  derivedSwapInfo: DerivedSwapInfo
+  account: AccountMeta
+}): SwapTxAndGasInfo {
   const {
     chainId,
     wrapType,
@@ -50,6 +65,7 @@ export function useSwapTxAndGasInfo({ derivedSwapInfo }: { derivedSwapInfo: Deri
   } = derivedSwapInfo
 
   const tokenApprovalInfo = useTokenApprovalInfo({
+    account,
     chainId,
     wrapType,
     currencyInAmount: currencyAmounts[CurrencyField.INPUT],
@@ -58,6 +74,7 @@ export function useSwapTxAndGasInfo({ derivedSwapInfo }: { derivedSwapInfo: Deri
 
   // TODO(MOB-3425) decouple wrap tx from swap tx to simplify UniswapX code
   const swapTxInfo = useTransactionRequestInfo({
+    account,
     derivedSwapInfo,
     // Dont send transaction request if invalid or missing approval data
     skip: !tokenApprovalInfo?.action || tokenApprovalInfo.action === ApprovalAction.Unknown,
@@ -91,6 +108,12 @@ export function useSwapTxAndGasInfo({ derivedSwapInfo }: { derivedSwapInfo: Deri
     if (trade?.routing === Routing.DUTCH_V2) {
       const signature = swapTxInfo.permitSignature
       const orderParams = signature ? { signature, quote: trade.quote.quote, routing: Routing.DUTCH_V2 } : undefined
+      const gasFeeBreakdown: UniswapXGasBreakdown = {
+        classicGasUseEstimateUSD: trade.quote.quote.classicGasUseEstimateUSD,
+        approvalCost: tokenApprovalInfo?.gasFee,
+        wrapCost: swapTxInfo.gasFeeResult.value,
+        inputTokenSymbol: trade.inputAmount.currency.wrapped.symbol,
+      }
 
       return {
         routing: Routing.DUTCH_V2,
@@ -99,6 +122,7 @@ export function useSwapTxAndGasInfo({ derivedSwapInfo }: { derivedSwapInfo: Deri
         approveTxRequest,
         orderParams,
         gasFee,
+        gasFeeBreakdown,
         approvalError,
       }
     } else {

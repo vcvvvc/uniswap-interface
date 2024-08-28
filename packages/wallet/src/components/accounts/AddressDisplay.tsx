@@ -3,7 +3,7 @@ import { PropsWithChildren, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FlexAlignType } from 'react-native'
 import { useDispatch } from 'react-redux'
-import { ColorTokens, Flex, HapticFeedback, SpaceTokens, Text, TextProps, TouchableArea } from 'ui/src'
+import { ColorTokens, Flex, SpaceTokens, Text, TextProps, TouchableArea, useHapticFeedback } from 'ui/src'
 import { CopySheets } from 'ui/src/components/icons'
 import { fonts } from 'ui/src/theme'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
@@ -22,6 +22,7 @@ type AddressDisplayProps = {
   address: string
   overrideDisplayName?: string
   allowFontScaling?: boolean
+  lineHeight?: number
   hideAddressInSubtitle?: boolean
   size?: number
   variant?: keyof typeof fonts
@@ -63,11 +64,12 @@ function CopyButtonWrapper({ children, onPress }: PropsWithChildren<CopyButtonWr
 
 // This seems to work for most font sizes and screens, but could probably be improved and abstracted
 // if we find more uses for it in other areas.
-function getLineHeightForAdjustedFontSize(nameLength: number): number {
+function getLineHeightForAdjustedFontSize(nameLength: number, maxLineHeight?: number): number {
   // as name gets longer, number gets smaller down to 1, past 50 just 1
   const lineHeightBase = 50 - Math.min(49, nameLength)
   const scale = 1.2
-  return lineHeightBase * scale
+  const calculatedLineHeight = lineHeightBase * scale
+  return maxLineHeight ? Math.min(calculatedLineHeight, maxLineHeight) : calculatedLineHeight
 }
 
 /** Helper component to display identicon and formatted address */
@@ -75,6 +77,7 @@ function getLineHeightForAdjustedFontSize(nameLength: number): number {
 export function AddressDisplay({
   allowFontScaling = true,
   overrideDisplayName,
+  lineHeight,
   address,
   size = 24,
   variant = 'body1',
@@ -101,6 +104,7 @@ export function AddressDisplay({
   const dispatch = useDispatch()
   const displayName = useDisplayName(address, { includeUnitagSuffix, overrideDisplayName })
   const { avatar } = useAvatar(address)
+  const { hapticFeedback } = useHapticFeedback()
 
   const showAddressAsSubtitle = !hideAddressInSubtitle && displayName?.type !== DisplayNameType.Address
 
@@ -108,7 +112,7 @@ export function AddressDisplay({
     if (!address) {
       return
     }
-    await HapticFeedback.impact()
+    await hapticFeedback.impact()
     await setClipboard(address)
     dispatch(
       pushNotification({
@@ -147,10 +151,10 @@ export function AddressDisplay({
     name.length > 20
       ? {
           adjustsFontSizeToFit: true,
-          lineHeight: getLineHeightForAdjustedFontSize(name.length),
+          lineHeight: getLineHeightForAdjustedFontSize(name.length, lineHeight),
         }
       : {
-          lineHeight: fonts[variant].lineHeight,
+          lineHeight: lineHeight ?? fonts[variant].lineHeight,
         }
 
   return (
